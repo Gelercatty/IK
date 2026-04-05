@@ -5,8 +5,7 @@ namespace GelerIK.Runtime.Core
 {
     /// <summary>
     /// IK 系统共用的正向运动学工具类。
-    /// 它会根据 <see cref="ChainDefinition"/> 中的静态层级信息，
-    /// 将 <see cref="ChainState"/> 里的局部旋转展开为整条链的世界空间姿态。
+    /// 当前统一约定：骨架结构真值来自 localBindOffset，末端执行器是链最后一个关节本身。
     /// </summary>
     public static class ForwardKinematics
     {
@@ -25,7 +24,7 @@ namespace GelerIK.Runtime.Core
 
             for (int i = 0; i < definition.JointCount; i++)
             {
-                JointDefinition jointDefinition = definition.joints[i]; // we need the parent def in joint def
+                JointDefinition jointDefinition = definition.joints[i];
                 JointState jointState = state.joints[i];
 
                 if (jointDefinition.parentIndex < 0)
@@ -85,24 +84,24 @@ namespace GelerIK.Runtime.Core
 
         /// <summary>
         /// 计算单根骨骼骨端在世界空间中的位置。
-        /// 当前约定骨骼长度沿局部 +Z 方向延伸。
+        /// 在当前设计里，骨骼长度由 localBindOffset 的模长给出。
+        /// 这个方法主要用于显示或调试，不再参与末端执行器定义。
         /// </summary>
         public static Vector3 GetBoneEndPosition(JointDefinition jointDefinition, JointState jointState)
         {
-            return jointState.worldPosition + jointState.worldRotation * (Vector3.forward * jointDefinition.boneLength);
+            return jointState.worldPosition + jointState.worldRotation * (Vector3.forward * jointDefinition.BoneLength);
         }
 
         /// <summary>
-        /// 在所有关节世界姿态计算完成后，刷新末端执行器的缓存姿态。
-        /// 目前末端执行器默认定义为整条链最后一根骨骼的骨端。
+        /// 在所有关节世界姿态计算完成后，刷新末端执行器缓存。
+        /// 当前统一约定末端执行器就是链最后一个关节的位置，而不是额外延伸的骨端。
         /// </summary>
         private static void UpdateEndEffector(ChainDefinition definition, ChainState state)
         {
             int lastIndex = definition.JointCount - 1;
-            JointDefinition lastDefinition = definition.joints[lastIndex];
-            JointState lastState           = state.joints[lastIndex];
+            JointState lastState = state.joints[lastIndex];
 
-            state.endEffectorPosition = GetBoneEndPosition(lastDefinition, lastState);
+            state.endEffectorPosition = lastState.worldPosition;
             state.endEffectorRotation = lastState.worldRotation;
         }
 

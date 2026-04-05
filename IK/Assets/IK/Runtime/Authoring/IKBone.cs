@@ -63,6 +63,7 @@ namespace GelerIK.Runtime.Authoring
             localAxisZ = NormalizeOrDefault(localAxisZ, Vector3.forward);
             weight = Mathf.Max(0f, weight);
             boneLength = Mathf.Max(0f, boneLength);
+            SyncBoneLengthToLocalOffset();
             boneRadius = Mathf.Max(0.001f, boneRadius);
             axisLength = Mathf.Max(0.01f, axisLength);
 
@@ -91,7 +92,6 @@ namespace GelerIK.Runtime.Authoring
                 name = gameObject.name,
                 transform = transform,
                 localBindOffset = transform.localPosition,
-                boneLength = boneLength,
                 restLocalRotation = restLocalRotation,
                 axes = CreateAxes(),
                 limit = new JointLimit(limitX, limitY, limitZ),
@@ -107,7 +107,7 @@ namespace GelerIK.Runtime.Authoring
                 return false;
             }
 
-            boneLength = definition.boneLength;
+            boneLength = definition.BoneLength;
             restLocalRotation = definition.restLocalRotation;
             weight = definition.weight;
             locked = definition.locked;
@@ -210,6 +210,18 @@ namespace GelerIK.Runtime.Authoring
         private static Vector3 NormalizeOrDefault(Vector3 axis, Vector3 fallback)
         {
             return axis.sqrMagnitude < 1e-6f ? fallback : axis.normalized;
+        }
+
+        private void SyncBoneLengthToLocalOffset()
+        {
+            if (parentBone == null)
+            {
+                return;
+            }
+
+            Vector3 currentOffset = transform.localPosition;
+            Vector3 direction = currentOffset.sqrMagnitude > 1e-8f ? currentOffset.normalized : Vector3.forward;
+            transform.localPosition = direction * boneLength;
         }
 
         private void AlignToParentBoneEnd()
@@ -319,10 +331,10 @@ namespace GelerIK.Runtime.Authoring
             previewObject.name = MeshPreviewObjectName;
             previewObject.transform.SetParent(transform, false);
 
-            Collider collider = previewObject.GetComponent<Collider>();
-            if (collider != null)
+            Collider colliderComponent = previewObject.GetComponent<Collider>();
+            if (colliderComponent)
             {
-                collider.enabled = false;
+                colliderComponent.enabled = false;
             }
 
             return previewObject;
@@ -330,22 +342,22 @@ namespace GelerIK.Runtime.Authoring
 
         private void EnsureCapsulePresentation(GameObject previewObject, MeshFilter meshFilter, MeshRenderer meshRenderer)
         {
-            Collider collider = previewObject.GetComponent<Collider>();
-            if (collider != null)
+            var collider = previewObject.GetComponent<Collider>();
+            if (collider)
             {
                 collider.enabled = false;
             }
 
-            if (meshFilter.sharedMesh == null)
+            if (!meshFilter.sharedMesh)
             {
                 MeshFilter existingMeshFilter = previewObject.GetComponent<MeshFilter>();
-                if (existingMeshFilter != null)
+                if (existingMeshFilter)
                 {
                     meshFilter.sharedMesh = existingMeshFilter.sharedMesh;
                 }
             }
 
-            if (meshRenderer.sharedMaterial == null)
+            if (!meshRenderer.sharedMaterial)
             {
                 MeshRenderer existingMeshRenderer = previewObject.GetComponent<MeshRenderer>();
                 if (existingMeshRenderer != null)

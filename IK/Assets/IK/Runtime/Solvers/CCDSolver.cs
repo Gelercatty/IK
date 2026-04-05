@@ -48,18 +48,18 @@ namespace GelerIK.Runtime.Solvers
 
         private static void SolveIteration(IKSolveRequest request)
         {
-            for (int jointIndex = request.definition.JointCount - 1; jointIndex >= 0; jointIndex--)
+            for (var jointIndex = request.definition.JointCount - 1; jointIndex >= 0; jointIndex--)
             {
-                JointDefinition jointDefinition = request.definition.joints[jointIndex];
+                var jointDefinition = request.definition.joints[jointIndex];
                 if (jointDefinition.locked)
                 {
                     continue;
                 }
 
-                JointState jointState = request.state.joints[jointIndex];
-                Vector3 jointPosition = jointState.worldPosition;
-                Vector3 toEnd = request.state.endEffectorPosition - jointPosition;
-                Vector3 toTarget = request.targetPosition - jointPosition;
+                var jointState = request.state.joints[jointIndex];
+                var jointPosition = jointState.worldPosition;
+                var toEnd = request.state.endEffectorPosition - jointPosition;
+                var toTarget = request.targetPosition - jointPosition;
 
                 if (toEnd.sqrMagnitude < 1e-8f || toTarget.sqrMagnitude < 1e-8f)
                 {
