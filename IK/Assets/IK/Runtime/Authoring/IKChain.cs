@@ -37,6 +37,7 @@ namespace GelerIK.Runtime.Authoring
         [Header("Debug")]
         [SerializeField] private bool drawChain = true;
         [SerializeField] private Color chainColor = new(0.3f, 0.9f, 0.95f, 1f);
+        [SerializeField] private bool showJointMeshPreview;
 
         [SerializeField] private List<IKBone> bones = new();
         [SerializeField] private ChainDefinition definition;
@@ -58,6 +59,8 @@ namespace GelerIK.Runtime.Authoring
 
         private void OnValidate()
         {
+            ApplyJointMeshPreviewToAll();
+
             if (!rebuildOnValidate)
             {
                 return;
@@ -334,6 +337,25 @@ namespace GelerIK.Runtime.Authoring
             IKSolveResult result = solver.Solve(request);
             PushToTransforms();
             return result;
+        }
+
+        [ContextMenu("Apply Joint Mesh Preview To All")]
+        public void ApplyJointMeshPreviewToAll()
+        {
+            if (bones == null)
+            {
+                return;
+            }
+
+            for (int i = 0; i < bones.Count; i++)
+            {
+                if (bones[i] == null)
+                {
+                    continue;
+                }
+
+                bones[i].SetMeshPreviewEnabled(showJointMeshPreview);
+            }
         }
 
         // ReSharper disable Unity.PerformanceAnalysis

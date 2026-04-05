@@ -1,11 +1,17 @@
 using GelerIK.Runtime.Model;
 using UnityEngine;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 namespace GelerIK.Runtime.Authoring
 {
     [ExecuteAlways]
     public class IKBone : MonoBehaviour
     {
+        private const string MeshPreviewObjectName = "__IKBoneMeshPreview";
+        private bool meshPreviewSyncPending;
+
         [Header("Hierarchy")]
         [SerializeField] private IKBone parentBone;
         [SerializeField] private float boneLength = 1f;
@@ -37,6 +43,7 @@ namespace GelerIK.Runtime.Authoring
         [SerializeField] private float boneRadius = 0.04f;
         [SerializeField] private bool showAxes = true;
         [SerializeField] private float axisLength = 0.3f;
+        [SerializeField] private bool showMeshPreview;
 
         public IKBone ParentBone => parentBone;
         public Quaternion RestLocalRotation => restLocalRotation;
@@ -60,6 +67,7 @@ namespace GelerIK.Runtime.Authoring
             axisLength = Mathf.Max(0.01f, axisLength);
 
             TryAlignToParentBoneEnd();
+            RequestMeshPreviewSync();
         }
 
         [ContextMenu("Capture Rest Local Rotation")]
@@ -119,9 +127,20 @@ namespace GelerIK.Runtime.Authoring
             return true;
         }
 
+        public void SetMeshPreviewEnabled(bool enabled)
+        {
+            showMeshPreview = enabled;
+            RequestMeshPreviewSync();
+        }
+
         private void Update()
         {
             TryAlignToParentBoneEnd();
+            if (meshPreviewSyncPending)
+            {
+                meshPreviewSyncPending = false;
+                SyncMeshPreviewObject();
+            }
         }
 
         private JointAxis[] CreateAxes()
@@ -172,7 +191,16 @@ namespace GelerIK.Runtime.Authoring
         {
             if (transform.childCount > 0)
             {
-                return transform.GetChild(0).localPosition.magnitude;
+                for (int i = 0; i < transform.childCount; i++)
+                {
+                    Transform child = transform.GetChild(i);
+                    if (child.name == MeshPreviewObjectName)
+                    {
+                        continue;
+                    }
+
+                    return child.localPosition.magnitude;
+                }
             }
 
             float currentMagnitude = transform.localPosition.magnitude;
@@ -213,6 +241,145 @@ namespace GelerIK.Runtime.Authoring
             }
 
             AlignToParentBoneEnd();
+        }
+
+        private void RequestMeshPreviewSync()
+        {
+            meshPreviewSyncPending = true;
+
+#if UNITY_EDITOR
+            if (!Application.isPlaying)
+            {
+                EditorApplication.delayCall -= ExecutePendingMeshPreviewSync;
+                EditorApplication.delayCall += ExecutePendingMeshPreviewSync;
+            }
+#endif
+        }
+
+#if UNITY_EDITOR
+        private void ExecutePendingMeshPreviewSync()
+        {
+            if (this == null)
+            {
+                return;
+            }
+
+            if (!meshPreviewSyncPending)
+            {
+                return;
+            }
+
+            meshPreviewSyncPending = false;
+            SyncMeshPreviewObject();
+        }
+#endif
+
+        private void SyncMeshPreviewObject()
+        {
+            Transform previewTransform = transform.Find(MeshPreviewObjectName);
+
+            if (!showMeshPreview)
+            {
+                if (previewTransform != null)
+                {
+                    DestroyPreviewObject(previewTransform.gameObject);
+                }
+
+                return;
+            }
+
+            GameObject previewObject = previewTransform != null
+                ? previewTransform.gameObject
+                : CreatePreviewObject();
+
+            previewObject.name = MeshPreviewObjectName;
+            previewObject.transform.SetParent(transform, false);
+            previewObject.transform.localPosition = new Vector3(0f, 0f, 0.1f);
+            previewObject.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
+            previewObject.transform.localScale = new Vector3(0.2f, 0.2f, 0.2f);
+
+            MeshFilter meshFilter = previewObject.GetComponent<MeshFilter>();
+            if (meshFilter == null)
+            {
+                meshFilter = previewObject.AddComponent<MeshFilter>();
+            }
+
+            MeshRenderer meshRenderer = previewObject.GetComponent<MeshRenderer>();
+            if (meshRenderer == null)
+            {
+                meshRenderer = previewObject.AddComponent<MeshRenderer>();
+            }
+
+            EnsureCapsulePresentation(previewObject, meshFilter, meshRenderer);
+        }
+
+        private GameObject CreatePreviewObject()
+        {
+            GameObject previewObject = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            previewObject.name = MeshPreviewObjectName;
+            previewObject.transform.SetParent(transform, false);
+
+            Collider collider = previewObject.GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+
+            return previewObject;
+        }
+
+        private void EnsureCapsulePresentation(GameObject previewObject, MeshFilter meshFilter, MeshRenderer meshRenderer)
+        {
+            Collider collider = previewObject.GetComponent<Collider>();
+            if (collider != null)
+            {
+                collider.enabled = false;
+            }
+
+            if (meshFilter.sharedMesh == null)
+            {
+                MeshFilter existingMeshFilter = previewObject.GetComponent<MeshFilter>();
+                if (existingMeshFilter != null)
+                {
+                    meshFilter.sharedMesh = existingMeshFilter.sharedMesh;
+                }
+            }
+
+            if (meshRenderer.sharedMaterial == null)
+            {
+                MeshRenderer existingMeshRenderer = previewObject.GetComponent<MeshRenderer>();
+                if (existingMeshRenderer != null)
+                {
+                    meshRenderer.sharedMaterial = existingMeshRenderer.sharedMaterial;
+                }
+            }
+        }
+
+        private void DestroyPreviewObject(Object targetObject)
+        {
+            if (targetObject == null)
+            {
+                return;
+            }
+
+            if (Application.isPlaying)
+            {
+                Destroy(targetObject);
+            }
+            else
+            {
+#if UNITY_EDITOR
+                EditorApplication.delayCall += () =>
+                {
+                    if (targetObject != null)
+                    {
+                        DestroyImmediate(targetObject);
+                    }
+                };
+#else
+                Destroy(targetObject);
+#endif
+            }
         }
         
         
