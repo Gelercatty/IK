@@ -5,8 +5,8 @@ using UnityEngine;
 namespace GelerIK.Runtime.Solvers
 {
     /// <summary>
-    /// CCD（Cyclic Coordinate Descent）求解器骨架。
-    /// 第一版先只处理位置目标，后续再逐步补充限位、阻尼和姿态目标。
+    /// CCD（Cyclic Coordinate Descent）求解器。
+    /// 当前版本先只处理位置目标，后续再逐步补充限位、阻尼和姿态目标。
     /// </summary>
     public class CCDSolver : IIKSolver
     {
@@ -39,16 +39,57 @@ namespace GelerIK.Runtime.Solvers
                     break;
                 }
 
-                // TODO: 从链末端向根节点回溯，每次选择一个关节进行旋转修正。
-                // TODO: 计算“当前末端方向”和“目标方向”之间的夹角与旋转轴。
-                // TODO: 将这次旋转增量乘到 request.state.joints[jointIndex].localRotation 上。
-                // TODO: 支持 request.stepScale，让每轮修正不要一次走满。
-                // TODO: 后续在这里接入关节限位、锁定和权重。
-                break;
+                SolveIteration(request);
             }
 
             result.finalRotationErrorDegrees = 0f;
             return result;
+        }
+
+        private static void SolveIteration(IKSolveRequest request)
+        {
+            for (int jointIndex = request.definition.JointCount - 1; jointIndex >= 0; jointIndex--)
+            {
+                JointDefinition jointDefinition = request.definition.joints[jointIndex];
+                if (jointDefinition.locked)
+                {
+                    continue;
+                }
+
+                JointState jointState = request.state.joints[jointIndex];
+                Vector3 jointPosition = jointState.worldPosition;
+                Vector3 toEnd = request.state.endEffectorPosition - jointPosition;
+                Vector3 toTarget = request.targetPosition - jointPosition;
+
+                if (toEnd.sqrMagnitude < 1e-8f || toTarget.sqrMagnitude < 1e-8f)
+                {
+                    continue;
+                }
+
+                Quaternion worldDelta = Quaternion.FromToRotation(toEnd, toTarget);
+                float weight = Mathf.Max(0f, jointDefinition.weight);
+                float step = Mathf.Clamp01(request.stepScale * weight);
+                Quaternion scaledWorldDelta = Quaternion.Slerp(Quaternion.identity, worldDelta, step);
+
+                Quaternion parentWorldRotation = GetParentWorldRotation(request, jointDefinition);
+                Quaternion localDelta =
+                    Quaternion.Inverse(parentWorldRotation) * scaledWorldDelta * parentWorldRotation;
+
+                jointState.localRotation = localDelta * jointState.localRotation;
+                request.state.joints[jointIndex] = jointState;
+
+                ForwardKinematics.Evaluate(request.definition, request.state);
+            }
+        }
+
+        private static Quaternion GetParentWorldRotation(IKSolveRequest request, JointDefinition jointDefinition)
+        {
+            if (jointDefinition.parentIndex < 0)
+            {
+                return request.state.rootWorldRotation;
+            }
+
+            return request.state.joints[jointDefinition.parentIndex].worldRotation;
         }
 
         private static bool IsRequestValid(IKSolveRequest request)

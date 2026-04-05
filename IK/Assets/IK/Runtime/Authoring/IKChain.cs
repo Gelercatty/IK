@@ -297,6 +297,7 @@ namespace GelerIK.Runtime.Authoring
             return success;
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         /// <summary>
         /// 构建求解请求并调用当前选中的 IK 求解器。
         /// 目前先接入 CCD，后续可以在这里扩展 FABRIK、Jacobian 等。
@@ -304,20 +305,20 @@ namespace GelerIK.Runtime.Authoring
         [ContextMenu("Solve IK Once")]
         public IKSolveResult SolveIK()
         {
-            if (!ValidateChain(false) || target == null)
+            if (!ValidateChain(false) || !target)
             {
                 return null;
             }
 
             PullFromTransforms();
 
-            IIKSolver solver = CreateSolver();
+            var solver = CreateSolver();
             if (solver == null)
             {
                 return null;
             }
 
-            IKSolveRequest request = new IKSolveRequest
+            var request = new IKSolveRequest
             {
                 definition = definition,
                 state = state,
@@ -335,9 +336,10 @@ namespace GelerIK.Runtime.Authoring
             return result;
         }
 
+        // ReSharper disable Unity.PerformanceAnalysis
         public bool ValidateChain(bool logWarnings = true)
         {
-            if (rootBone == null || endBone == null)
+            if (!rootBone || !endBone)
             {
                 if (logWarnings)
                 {
@@ -369,7 +371,7 @@ namespace GelerIK.Runtime.Authoring
 
             for (int i = 1; i < bones.Count; i++)
             {
-                if (bones[i] == null)
+                if (!bones[i])
                 {
                     if (logWarnings)
                     {
