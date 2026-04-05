@@ -12,7 +12,8 @@ namespace GelerIK.Runtime.Authoring
         private enum SolverType
         {
             None,
-            CCD
+            CCD,
+            JacobianTranspose
         }
 
         [Header("Chain")]
@@ -441,6 +442,7 @@ namespace GelerIK.Runtime.Authoring
             return solverType switch
             {
                 SolverType.CCD => new CCDSolver(),
+                SolverType.JacobianTranspose => new JacobianTransposeSolver(),
                 _ => null
             };
         }
