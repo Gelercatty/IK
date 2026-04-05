@@ -184,7 +184,8 @@ namespace GelerIK.Runtime.Authoring
             ChainState chainState = new();
             chainState.EnsureSize(bones.Count);
             chainState.rootWorldPosition = rootBone.transform.position;
-            chainState.rootWorldRotation = rootBone.transform.rotation;
+            Transform rootParent = rootBone.transform.parent;
+            chainState.rootWorldRotation = rootParent != null ? rootParent.rotation : Quaternion.identity;
 
             for (int i = 0; i < bones.Count; i++)
             {
@@ -235,7 +236,8 @@ namespace GelerIK.Runtime.Authoring
 
             state.EnsureSize(bones.Count);
             state.rootWorldPosition = rootBone.transform.position;
-            state.rootWorldRotation = rootBone.transform.rotation;
+            Transform rootParent = rootBone.transform.parent;
+            state.rootWorldRotation = rootParent != null ? rootParent.rotation : Quaternion.identity;
 
             for (int i = 0; i < bones.Count; i++)
             {
@@ -274,8 +276,6 @@ namespace GelerIK.Runtime.Authoring
                 JointState jointState = state.joints[i];
 
                 boneTransform.localRotation = jointState.localRotation;
-                boneTransform.position = jointState.worldPosition;
-                boneTransform.rotation = jointState.worldRotation;
             }
         }
 

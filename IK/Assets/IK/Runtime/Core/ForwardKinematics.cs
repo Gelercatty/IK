@@ -5,7 +5,8 @@ namespace GelerIK.Runtime.Core
 {
     /// <summary>
     /// IK 系统共用的正向运动学工具类。
-    /// 当前统一约定：骨架结构真值来自 localBindOffset，末端执行器是链最后一个关节本身。
+    /// 当前统一约定：骨架结构真值来自 localBindOffset，
+    /// 末端执行器是链最后一根骨骼沿自身朝向延伸 BoneLength 后的骨端。
     /// </summary>
     public static class ForwardKinematics
     {
@@ -84,8 +85,7 @@ namespace GelerIK.Runtime.Core
 
         /// <summary>
         /// 计算单根骨骼骨端在世界空间中的位置。
-        /// 在当前设计里，骨骼长度由 localBindOffset 的模长给出。
-        /// 这个方法主要用于显示或调试，不再参与末端执行器定义。
+        /// 非末端骨骼长度来自 offset，末端骨骼长度来自 terminalBoneLength。
         /// </summary>
         public static Vector3 GetBoneEndPosition(JointDefinition jointDefinition, JointState jointState)
         {
@@ -94,14 +94,15 @@ namespace GelerIK.Runtime.Core
 
         /// <summary>
         /// 在所有关节世界姿态计算完成后，刷新末端执行器缓存。
-        /// 当前统一约定末端执行器就是链最后一个关节的位置，而不是额外延伸的骨端。
+        /// 当前统一约定末端执行器就是链最后一根骨骼的骨端。
         /// </summary>
         private static void UpdateEndEffector(ChainDefinition definition, ChainState state)
         {
             int lastIndex = definition.JointCount - 1;
+            JointDefinition lastDefinition = definition.joints[lastIndex];
             JointState lastState = state.joints[lastIndex];
 
-            state.endEffectorPosition = lastState.worldPosition;
+            state.endEffectorPosition = GetBoneEndPosition(lastDefinition, lastState);
             state.endEffectorRotation = lastState.worldRotation;
         }
 

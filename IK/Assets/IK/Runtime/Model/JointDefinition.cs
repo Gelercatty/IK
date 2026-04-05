@@ -10,6 +10,8 @@ namespace GelerIK.Runtime.Model
         public string name;
         public Transform transform;
         public Vector3 localBindOffset;
+        public bool isTerminal;
+        public float terminalBoneLength;
         public Quaternion restLocalRotation = Quaternion.identity;
         public JointAxis[] axes =
         {
@@ -21,6 +23,6 @@ namespace GelerIK.Runtime.Model
         public float weight = 1f;
         public bool locked;
 
-        public float BoneLength => localBindOffset.magnitude;
+        public float BoneLength => isTerminal ? terminalBoneLength : localBindOffset.magnitude;
     }
 }

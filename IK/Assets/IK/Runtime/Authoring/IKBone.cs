@@ -14,7 +14,7 @@ namespace GelerIK.Runtime.Authoring
 
         [Header("Hierarchy")]
         [SerializeField] private IKBone parentBone;
-        [SerializeField] private float boneLength = 1f;
+        [SerializeField] private float terminalBoneLength = 1f;
         [SerializeField] private bool alignToParentBoneEnd;
 
         [Header("Degrees Of Freedom")]
@@ -47,13 +47,13 @@ namespace GelerIK.Runtime.Authoring
 
         public IKBone ParentBone => parentBone;
         public Quaternion RestLocalRotation => restLocalRotation;
-        public float BoneLength => boneLength;
+        public float BoneLength => HasChildBone() ? GetChildBoneLength() : terminalBoneLength;
 
         private void Reset()
         {
             restLocalRotation = transform.localRotation;
             parentBone = transform.parent == null ? null : transform.parent.GetComponent<IKBone>();
-            boneLength = GetDefaultBoneLength();
+            terminalBoneLength = GetDefaultBoneLength();
         }
 
         private void OnValidate()
@@ -62,8 +62,8 @@ namespace GelerIK.Runtime.Authoring
             localAxisY = NormalizeOrDefault(localAxisY, Vector3.up);
             localAxisZ = NormalizeOrDefault(localAxisZ, Vector3.forward);
             weight = Mathf.Max(0f, weight);
-            boneLength = Mathf.Max(0f, boneLength);
-            SyncBoneLengthToLocalOffset();
+            terminalBoneLength = Mathf.Max(0f, terminalBoneLength);
+            SyncBoneLengthToOffset();
             boneRadius = Mathf.Max(0.001f, boneRadius);
             axisLength = Mathf.Max(0.01f, axisLength);
 
@@ -80,7 +80,7 @@ namespace GelerIK.Runtime.Authoring
         [ContextMenu("Guess Bone Length From Child")]
         public void GuessBoneLengthFromChild()
         {
-            boneLength = GetDefaultBoneLength();
+            terminalBoneLength = GetDefaultBoneLength();
         }
 
         public JointDefinition CreateDefinition(int index, int parentIndex)
@@ -92,6 +92,8 @@ namespace GelerIK.Runtime.Authoring
                 name = gameObject.name,
                 transform = transform,
                 localBindOffset = transform.localPosition,
+                isTerminal = !HasChildBone(),
+                terminalBoneLength = terminalBoneLength,
                 restLocalRotation = restLocalRotation,
                 axes = CreateAxes(),
                 limit = new JointLimit(limitX, limitY, limitZ),
@@ -107,7 +109,7 @@ namespace GelerIK.Runtime.Authoring
                 return false;
             }
 
-            boneLength = definition.BoneLength;
+            terminalBoneLength = definition.terminalBoneLength;
             restLocalRotation = definition.restLocalRotation;
             weight = definition.weight;
             locked = definition.locked;
@@ -189,22 +191,7 @@ namespace GelerIK.Runtime.Authoring
 
         private float GetDefaultBoneLength()
         {
-            if (transform.childCount > 0)
-            {
-                for (int i = 0; i < transform.childCount; i++)
-                {
-                    Transform child = transform.GetChild(i);
-                    if (child.name == MeshPreviewObjectName)
-                    {
-                        continue;
-                    }
-
-                    return child.localPosition.magnitude;
-                }
-            }
-
-            float currentMagnitude = transform.localPosition.magnitude;
-            return currentMagnitude > 1e-6f ? currentMagnitude : 1f;
+            return HasChildBone() ? GetChildBoneLength() : terminalBoneLength;
         }
 
         private static Vector3 NormalizeOrDefault(Vector3 axis, Vector3 fallback)
@@ -212,27 +199,59 @@ namespace GelerIK.Runtime.Authoring
             return axis.sqrMagnitude < 1e-6f ? fallback : axis.normalized;
         }
 
-        private void SyncBoneLengthToLocalOffset()
+        private void SyncBoneLengthToOffset()
         {
-            if (parentBone == null)
+            IKBone childBone = GetChildBone();
+            if (childBone == null)
             {
                 return;
             }
 
-            Vector3 currentOffset = transform.localPosition;
+            Vector3 currentOffset = childBone.transform.localPosition;
             Vector3 direction = currentOffset.sqrMagnitude > 1e-8f ? currentOffset.normalized : Vector3.forward;
-            transform.localPosition = direction * boneLength;
+            childBone.transform.localPosition = direction * terminalBoneLength;
+        }
+
+        private IKBone GetChildBone()
+        {
+            for (int i = 0; i < transform.childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                if (child.name == MeshPreviewObjectName)
+                {
+                    continue;
+                }
+
+                IKBone childBone = child.GetComponent<IKBone>();
+                if (childBone != null)
+                {
+                    return childBone;
+                }
+            }
+
+            return null;
+        }
+
+        private bool HasChildBone()
+        {
+            return GetChildBone() != null;
+        }
+
+        private float GetChildBoneLength()
+        {
+            IKBone childBone = GetChildBone();
+            return childBone != null ? childBone.transform.localPosition.magnitude : 0f;
         }
 
         private void AlignToParentBoneEnd()
         {
             Transform parentTransform = parentBone.transform;
             Vector3 parentBoneEndWorld =
-                parentTransform.position + parentTransform.rotation * (Vector3.forward * parentBone.boneLength);
+                parentTransform.position + parentTransform.rotation * (Vector3.forward * parentBone.BoneLength);
 
             if (transform.parent == parentTransform)
             {
-                transform.localPosition = Vector3.forward * parentBone.boneLength;
+                transform.localPosition = Vector3.forward * parentBone.BoneLength;
                 return;
             }
 
@@ -271,12 +290,7 @@ namespace GelerIK.Runtime.Authoring
 #if UNITY_EDITOR
         private void ExecutePendingMeshPreviewSync()
         {
-            if (this == null)
-            {
-                return;
-            }
-
-            if (!meshPreviewSyncPending)
+            if (this == null || !meshPreviewSyncPending)
             {
                 return;
             }
@@ -332,7 +346,7 @@ namespace GelerIK.Runtime.Authoring
             previewObject.transform.SetParent(transform, false);
 
             Collider colliderComponent = previewObject.GetComponent<Collider>();
-            if (colliderComponent)
+            if (colliderComponent != null)
             {
                 colliderComponent.enabled = false;
             }
@@ -342,22 +356,22 @@ namespace GelerIK.Runtime.Authoring
 
         private void EnsureCapsulePresentation(GameObject previewObject, MeshFilter meshFilter, MeshRenderer meshRenderer)
         {
-            var collider = previewObject.GetComponent<Collider>();
-            if (collider)
+            Collider colliderComponent = previewObject.GetComponent<Collider>();
+            if (colliderComponent != null)
             {
-                collider.enabled = false;
+                colliderComponent.enabled = false;
             }
 
-            if (!meshFilter.sharedMesh)
+            if (meshFilter.sharedMesh == null)
             {
                 MeshFilter existingMeshFilter = previewObject.GetComponent<MeshFilter>();
-                if (existingMeshFilter)
+                if (existingMeshFilter != null)
                 {
                     meshFilter.sharedMesh = existingMeshFilter.sharedMesh;
                 }
             }
 
-            if (!meshRenderer.sharedMaterial)
+            if (meshRenderer.sharedMaterial == null)
             {
                 MeshRenderer existingMeshRenderer = previewObject.GetComponent<MeshRenderer>();
                 if (existingMeshRenderer != null)
@@ -393,10 +407,7 @@ namespace GelerIK.Runtime.Authoring
 #endif
             }
         }
-        
-        
-        
-        // visualize
+
         private void OnDrawGizmos()
         {
             if (showBone)
@@ -413,7 +424,7 @@ namespace GelerIK.Runtime.Authoring
         private void DrawBoneGizmo()
         {
             Vector3 start = transform.position;
-            Vector3 end = start + transform.rotation * (Vector3.forward * boneLength);
+            Vector3 end = start + transform.rotation * (Vector3.forward * BoneLength);
             Gizmos.color = boneColor;
             Gizmos.DrawLine(start, end);
             Gizmos.DrawWireSphere(start, boneRadius);
