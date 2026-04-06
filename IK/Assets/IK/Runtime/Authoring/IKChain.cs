@@ -13,7 +13,9 @@ namespace GelerIK.Runtime.Authoring
         {
             None,
             CCD,
-            JacobianTranspose
+            JacobianTranspose,
+            JacobianDampedLeastSquares,
+            JacobianSvdDampedLeastSquares
         }
 
         [Header("Chain")]
@@ -443,6 +445,8 @@ namespace GelerIK.Runtime.Authoring
             {
                 SolverType.CCD => new CCDSolver(),
                 SolverType.JacobianTranspose => new JacobianTransposeSolver(),
+                SolverType.JacobianDampedLeastSquares => new JacobianDampedLeastSquaresSolver(),
+                SolverType.JacobianSvdDampedLeastSquares => new JacobianSvdDampedLeastSquaresSolver(),
                 _ => null
             };
         }

@@ -1,0 +1,7 @@
+﻿series_name,method_family,tuning_name,tuning_value,best_step_scale,composite_score
+JacobianTranspose,JacobianTranspose,step_scale,1,0.05,79.05858
+CCD,CCD,step_scale,1,0.05,75.66091
+JacobianDLS_lambda_0.30,JacobianDLS,damping,0.3,0.05,73.18033
+JacobianSvdDLS_default,JacobianSvdDLS,minimum_damping,0.02,0.05,71.90435
+JacobianDLS_lambda_0.10,JacobianDLS,damping,0.1,0.05,70.65851
+JacobianDLS_lambda_0.03,JacobianDLS,damping,0.03,0.02,66.70312

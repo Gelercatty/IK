@@ -1,0 +1,27 @@
+﻿IK Benchmark Experiment Plan
+
+Goal
+Compare CCD, Jacobian Transpose, fixed-damping DLS, and SVD-adaptive DLS under a one-dimensional step-scale sweep.
+
+Fixed Solve Settings
+maxIterations=500, positionTolerance=0.1, warmupSamplesPerSolver=1, totalReach=3.2
+
+Sweep Axis
+step_scale
+stepScaleSweep=0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05
+
+Sample Design
+Reachable: 200 samples, ratio range [0.15, 0.95]
+Unreachable: 200 samples, ratio range [1.05, 1.35]
+Samples are fixed by random seed 20260406 and reused for every solver and every step scale.
+
+Rotation Deviation Metric
+Average per-joint local-rotation offset from the initial pose, measured in degrees at solve end.
+
+Solver Series
+CCD: family=CCD, step_scale=1
+JacobianTranspose: family=JacobianTranspose, step_scale=1
+JacobianDLS_lambda_0.03: family=JacobianDLS, damping=0.03
+JacobianDLS_lambda_0.10: family=JacobianDLS, damping=0.1
+JacobianDLS_lambda_0.30: family=JacobianDLS, damping=0.3
+JacobianSvdDLS_default: family=JacobianSvdDLS, minimum_damping=0.02

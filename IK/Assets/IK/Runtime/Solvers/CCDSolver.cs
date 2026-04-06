@@ -48,6 +48,8 @@ namespace GelerIK.Runtime.Solvers
 
         private static void SolveIteration(IKSolveRequest request)
         {
+            const float MinDirectionSqrMagnitude = 1e-6f;
+
             for (var jointIndex = request.definition.JointCount - 1; jointIndex >= 0; jointIndex--)
             {
                 var jointDefinition = request.definition.joints[jointIndex];
@@ -61,12 +63,17 @@ namespace GelerIK.Runtime.Solvers
                 var toEnd = request.state.endEffectorPosition - jointPosition;
                 var toTarget = request.targetPosition - jointPosition;
 
-                if (toEnd.sqrMagnitude < 1e-8f || toTarget.sqrMagnitude < 1e-8f)
+                float toEndSqrMagnitude = toEnd.sqrMagnitude;
+                float toTargetSqrMagnitude = toTarget.sqrMagnitude;
+
+                if (toEndSqrMagnitude < MinDirectionSqrMagnitude || toTargetSqrMagnitude < MinDirectionSqrMagnitude)
                 {
                     continue;
                 }
 
-                Quaternion worldDelta = Quaternion.FromToRotation(toEnd, toTarget);
+                Vector3 fromDirection = toEnd / Mathf.Sqrt(toEndSqrMagnitude);
+                Vector3 toDirection = toTarget / Mathf.Sqrt(toTargetSqrMagnitude);
+                Quaternion worldDelta = SafeFromToRotation(fromDirection, toDirection);
                 float weight = Mathf.Max(0f, jointDefinition.weight);
                 float step = Mathf.Clamp01(request.stepScale * weight);
                 Quaternion scaledWorldDelta = Quaternion.Slerp(Quaternion.identity, worldDelta, step);
@@ -75,11 +82,68 @@ namespace GelerIK.Runtime.Solvers
                 Quaternion localDelta =
                     Quaternion.Inverse(parentWorldRotation) * scaledWorldDelta * parentWorldRotation;
 
-                jointState.localRotation = localDelta * jointState.localRotation;
+                jointState.localRotation = Normalize(localDelta * jointState.localRotation);
                 request.state.joints[jointIndex] = jointState;
 
                 ForwardKinematics.Evaluate(request.definition, request.state);
             }
+        }
+
+        private static Quaternion SafeFromToRotation(Vector3 fromDirection, Vector3 toDirection)
+        {
+            float dot = Mathf.Clamp(Vector3.Dot(fromDirection, toDirection), -1f, 1f);
+
+            if (dot > 1f - 1e-6f)
+            {
+                return Quaternion.identity;
+            }
+
+            if (dot < -1f + 1e-6f)
+            {
+                Vector3 axis = Vector3.Cross(fromDirection, Vector3.right);
+                if (axis.sqrMagnitude < 1e-6f)
+                {
+                    axis = Vector3.Cross(fromDirection, Vector3.up);
+                }
+
+                if (axis.sqrMagnitude < 1e-6f)
+                {
+                    return Quaternion.identity;
+                }
+
+                return Quaternion.AngleAxis(180f, axis.normalized);
+            }
+
+            Vector3 rotationAxis = Vector3.Cross(fromDirection, toDirection);
+            if (rotationAxis.sqrMagnitude < 1e-12f)
+            {
+                return Quaternion.identity;
+            }
+
+            float angle = Mathf.Acos(dot) * Mathf.Rad2Deg;
+            return Quaternion.AngleAxis(angle, rotationAxis.normalized);
+        }
+
+        private static Quaternion Normalize(Quaternion rotation)
+        {
+            float magnitude =
+                Mathf.Sqrt(
+                    rotation.x * rotation.x +
+                    rotation.y * rotation.y +
+                    rotation.z * rotation.z +
+                    rotation.w * rotation.w);
+
+            if (magnitude < 1e-8f)
+            {
+                return Quaternion.identity;
+            }
+
+            float inverseMagnitude = 1f / magnitude;
+            return new Quaternion(
+                rotation.x * inverseMagnitude,
+                rotation.y * inverseMagnitude,
+                rotation.z * inverseMagnitude,
+                rotation.w * inverseMagnitude);
         }
 
         private static Quaternion GetParentWorldRotation(IKSolveRequest request, JointDefinition jointDefinition)

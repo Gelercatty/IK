@@ -1,0 +1,19 @@
+﻿IK Benchmark Summary
+
+JacobianTranspose
+best_score=79.059, best_step_scale=0.05
+
+CCD
+best_score=75.661, best_step_scale=0.05
+
+JacobianDLS_lambda_0.30
+best_score=73.18, best_step_scale=0.05
+
+JacobianSvdDLS_default
+best_score=71.904, best_step_scale=0.05
+
+JacobianDLS_lambda_0.10
+best_score=70.659, best_step_scale=0.05
+
+JacobianDLS_lambda_0.03
+best_score=66.703, best_step_scale=0.02

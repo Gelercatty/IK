@@ -209,14 +209,14 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 93720852}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.0000003793667, y: -0.0000005105384, z: 0.99480855, w: 0.10176417}
-  m_LocalPosition: {x: 0, y: 0, z: 0.78}
+  m_LocalRotation: {x: 0.392838, y: -0.7876844, z: -0.16519971, w: 0.44490537}
+  m_LocalPosition: {x: 0, y: 0, z: 1.88}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 1867863641}
   m_Father: {fileID: 795161406}
-  m_LocalEulerAnglesHint: {x: -27.975, y: 18.862, z: 40.503}
+  m_LocalEulerAnglesHint: {x: 35.265, y: -11.211, z: 153.222}
 --- !u!114 &93720854
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -351,7 +351,7 @@ Transform:
   m_GameObject: {fileID: 598275848}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0.37, y: 2.635, z: 3.226}
+  m_LocalPosition: {x: 2.33, y: 0, z: 0.13}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -481,7 +481,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   parentBone: {fileID: 0}
-  terminalBoneLength: 0.78
+  terminalBoneLength: 1.88
   alignToParentBoneEnd: 1
   useAxisX: 1
   useAxisY: 1
@@ -509,8 +509,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 795161404}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.0064103473, y: 0.016189085, z: 0.9868754, w: -0.16054209}
-  m_LocalPosition: {x: 0.338, y: 2.489, z: -1.064}
+  m_LocalRotation: {x: -0.12958102, y: -0.010264227, z: -0.99003774, w: -0.0541178}
+  m_LocalPosition: {x: 0.352, y: 0, z: -0.22}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -537,11 +537,11 @@ MonoBehaviour:
   rebuildOnValidate: 1
   syncStateFromTransformsOnUpdate: 1
   pushStateToTransformsAfterFk: 1
-  solverType: 2
+  solverType: 4
   solveInUpdate: 1
-  maxIterations: 185
-  positionTolerance: 0.1
-  stepScale: 0.02
+  maxIterations: 36
+  positionTolerance: 0.05
+  stepScale: 0.001
   drawChain: 1
   chainColor: {r: 0.3, g: 0.9, b: 0.95, a: 1}
   showJointMeshPreview: 0
@@ -559,9 +559,9 @@ MonoBehaviour:
       parentIndex: -1
       name: root
       transform: {fileID: 795161406}
-      localBindOffset: {x: 0.338, y: 2.489, z: -1.064}
+      localBindOffset: {x: 0.352, y: 0, z: -0.22}
       isTerminal: 0
-      terminalBoneLength: 0.78
+      terminalBoneLength: 1.88
       restLocalRotation: {x: 0, y: 0, z: 0, w: 0}
       axes:
       - name: X
@@ -583,7 +583,7 @@ MonoBehaviour:
       parentIndex: 0
       name: bone1
       transform: {fileID: 93720853}
-      localBindOffset: {x: 0, y: 0, z: 0.78}
+      localBindOffset: {x: 0, y: 0, z: 1.88}
       isTerminal: 0
       terminalBoneLength: 1
       restLocalRotation: {x: 0, y: 0, z: 0, w: 1}
@@ -601,7 +601,7 @@ MonoBehaviour:
         xDegrees: {x: -180, y: 180}
         yDegrees: {x: -180, y: 180}
         zDegrees: {x: -180, y: 180}
-      weight: 1
+      weight: 1.6
       locked: 0
     - index: 2
       parentIndex: 1
@@ -625,7 +625,7 @@ MonoBehaviour:
         xDegrees: {x: -180, y: 180}
         yDegrees: {x: -180, y: 180}
         zDegrees: {x: -180, y: 180}
-      weight: 1
+      weight: 0.58
       locked: 0
     - index: 3
       parentIndex: 2
@@ -652,23 +652,23 @@ MonoBehaviour:
       weight: 1
       locked: 0
   state:
-    rootWorldPosition: {x: 0.338, y: 2.489, z: -1.064}
+    rootWorldPosition: {x: 0.352, y: 0, z: -0.22}
     rootWorldRotation: {x: 0, y: 0, z: 0, w: 1}
     joints:
-    - localRotation: {x: 0.0064103473, y: 0.016189085, z: 0.9868754, w: -0.16054209}
-      worldPosition: {x: 0.338, y: 2.489, z: -1.064}
-      worldRotation: {x: 0.0064103473, y: 0.016189085, z: 0.9868754, w: -0.16054209}
-    - localRotation: {x: -0.0000003793667, y: -0.0000005105384, z: 0.99480855, w: 0.10176417}
-      worldPosition: {x: 0.3438144, y: 2.5155292, z: -0.284473}
-      worldRotation: {x: 0.016757948, y: -0.0047298917, z: -0.05928008, w: -0.99808955}
-    - localRotation: {x: -0.00000031713031, y: -0.0000003983169, z: 0.9216695, w: -0.38797602}
-      worldPosition: {x: 0.35126927, y: 2.5495417, z: 0.7149206}
-      worldRotation: {x: -0.010860786, y: -0.013609788, z: -0.8969094, w: 0.44187146}
+    - localRotation: {x: -0.1295809, y: -0.010264217, z: -0.9900368, w: -0.054117747}
+      worldPosition: {x: 0.352, y: 0, z: -0.22}
+      worldRotation: {x: -0.1295809, y: -0.010264217, z: -0.9900368, w: -0.054117747}
+    - localRotation: {x: 0.39283797, y: -0.7876843, z: -0.1651997, w: 0.44490534}
+      worldPosition: {x: 0.83645844, y: 0.011841466, z: 1.5964689}
+      worldRotation: {x: -0.85705155, y: -0.37226966, z: -0.3254314, w: -0.14481172}
+    - localRotation: {x: -0.06719209, y: -0.033020627, z: -0.9325716, w: 0.35313827}
+      worldPosition: {x: 1.5020995, y: 0.005915721, z: 0.8502248}
+      worldRotation: {x: 0.04349466, y: -0.9040764, z: 0.023411814, w: -0.4245063}
     - localRotation: {x: 0.35234332, y: 0.4707311, z: -0.14548299, w: 0.7956766}
-      worldPosition: {x: 0.358724, y: 2.5835533, z: 1.7143142}
-      worldRotation: {x: 0.57123196, y: -0.120426446, z: -0.77825177, w: 0.231335}
-    endEffectorPosition: {x: 0.358724, y: 2.5835533, z: 1.7143142}
-    endEffectorRotation: {x: 0.57123196, y: -0.120426446, z: -0.77825177, w: 0.231335}
+      worldPosition: {x: 2.2717085, y: 0.00051109586, z: 0.21173292}
+      worldRotation: {x: 0.005542787, y: -0.904604, z: 0.41940624, w: 0.07588812}
+    endEffectorPosition: {x: 2.2717085, y: 0.00051109586, z: 0.21173292}
+    endEffectorRotation: {x: 0.005542787, y: -0.904604, z: 0.41940624, w: 0.07588812}
 --- !u!1 &963194225
 GameObject:
   m_ObjectHideFlags: 0
@@ -779,7 +779,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!64 &1734299862
 MeshCollider:
   m_ObjectHideFlags: 0
@@ -894,7 +894,7 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1867863640}
   serializedVersion: 2
-  m_LocalRotation: {x: -0.00000031713031, y: -0.0000003983169, z: 0.9216695, w: -0.38797602}
+  m_LocalRotation: {x: -0.06719205, y: -0.033020604, z: -0.93257093, w: 0.35313803}
   m_LocalPosition: {x: 0, y: 0, z: 1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0

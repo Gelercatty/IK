@@ -1,0 +1,22 @@
+﻿IK Benchmark Composite Score
+
+Normalization
+For higher-is-better metrics: N_high(x) = (x - x_min) / (x_max - x_min + eps)
+For lower-is-better metrics: N_low(x) = (x_max - x) / (x_max - x_min + eps)
+The min and max are computed over all tested (solver, step_scale) points in this benchmark.
+
+Score Formula
+Score = 100 * (
+  0.20 * N_high(reachable_success_rate)
+  + 0.10 * N_low(reachable_avg_success_iterations)
+  + 0.10 * N_low(reachable_avg_runtime_ms)
+  + 0.10 * N_low(reachable_avg_final_error)
+  + 0.20 * N_low(reachable_avg_joint_rotation_deviation_deg)
+  + 0.05 * N_low(unreachable_avg_runtime_ms)
+  + 0.15 * N_low(unreachable_avg_final_error)
+  + 0.10 * N_low(unreachable_avg_joint_rotation_deviation_deg)
+)
+
+Interpretation
+Higher scores are better.
+The final bar chart uses the best score over the tested step-scale range for each solver.

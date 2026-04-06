@@ -9,41 +9,97 @@ namespace GelerIK.Tests.EditMode
     public class IKSolverBenchmarks
     {
         [Test]
-        public void CompareDefaultSolversAcrossSharedTargetSets()
+        public void GenerateStepSweepBenchmarkCsvForCurrentSolvers()
         {
             IKBenchmarkConfig config = new IKBenchmarkConfig();
 
-            List<IKBenchmarkScenario> scenarios = new List<IKBenchmarkScenario>
+            List<IKBenchmarkCategory> categories = new List<IKBenchmarkCategory>
             {
-                new IKBenchmarkScenario("ReachableMidRange", 0.35f, 0.75f),
-                new IKBenchmarkScenario("ReachableBoundary", 0.9f, 1.0f),
-                new IKBenchmarkScenario("Unreachable", 1.1f, 1.35f)
+                new IKBenchmarkCategory(
+                    "Reachable",
+                    true,
+                    config.reachableMinRadiusRatio,
+                    config.reachableMaxRadiusRatio),
+                new IKBenchmarkCategory(
+                    "Unreachable",
+                    false,
+                    config.unreachableMinRadiusRatio,
+                    config.unreachableMaxRadiusRatio)
             };
 
             List<IKSolverRegistration> solvers = new List<IKSolverRegistration>
             {
-                new IKSolverRegistration("CCD(step=1.0)", () => new CCDSolver(), 1.0f),
-                new IKSolverRegistration("JacobianTranspose(step=0.15)", () => new JacobianTransposeSolver(), 0.15f)
+                new IKSolverRegistration(
+                    "CCD",
+                    "CCD",
+                    "step_scale",
+                    1.0f,
+                    () => new CCDSolver()),
+                new IKSolverRegistration(
+                    "JacobianTranspose",
+                    "JacobianTranspose",
+                    "step_scale",
+                    1.0f,
+                    () => new JacobianTransposeSolver()),
+                new IKSolverRegistration(
+                    "JacobianDLS_lambda_0.03",
+                    "JacobianDLS",
+                    "damping",
+                    0.03f,
+                    () => new JacobianDampedLeastSquaresSolver(0.03f)),
+                new IKSolverRegistration(
+                    "JacobianDLS_lambda_0.10",
+                    "JacobianDLS",
+                    "damping",
+                    0.10f,
+                    () => new JacobianDampedLeastSquaresSolver(0.10f)),
+                new IKSolverRegistration(
+                    "JacobianDLS_lambda_0.30",
+                    "JacobianDLS",
+                    "damping",
+                    0.30f,
+                    () => new JacobianDampedLeastSquaresSolver(0.30f)),
+                new IKSolverRegistration(
+                    "JacobianSvdDLS_default",
+                    "JacobianSvdDLS",
+                    "minimum_damping",
+                    0.02f,
+                    () => new JacobianSvdDampedLeastSquaresSolver(
+                        minimumDamping: 0.02f,
+                        singularityThreshold: 0.10f,
+                        dampingGain: 1.5f,
+                        maximumDamping: 1.0f))
             };
 
-            IKBenchmarkReport report = IKBenchmarkRunner.Run(config, solvers, scenarios);
-            string textReport = report.BuildTextReport();
+            IKBenchmarkReport report = IKBenchmarkRunner.Run(config, categories, solvers);
+
             string resultsDirectory = Path.GetFullPath(Path.Combine(Application.dataPath, "IK/Tests/Results"));
-            Directory.CreateDirectory(resultsDirectory);
+            IKBenchmarkCsvExporter.ExportAll(report, resultsDirectory);
 
-            string reportPath = Path.Combine(resultsDirectory, "IKSolverBenchmarkReport.txt");
-            File.WriteAllText(reportPath, textReport);
+            TestContext.Progress.WriteLine(report.BuildExperimentPlanText());
+            TestContext.Progress.WriteLine(report.BuildScoreFormulaText());
+            TestContext.Progress.WriteLine(report.BuildSummaryText());
+            TestContext.Progress.WriteLine("Benchmark CSV written to: " + resultsDirectory);
 
-            TestContext.Progress.WriteLine(textReport);
-            TestContext.Progress.WriteLine("Benchmark report written to: " + reportPath);
+            int expectedSampleCount = categories.Count * config.samplesPerCategory;
+            int expectedStepPointCount = categories.Count * solvers.Count * config.stepScaleSweep.Length;
+            int expectedScorePointCount = solvers.Count * config.stepScaleSweep.Length;
 
-            Assert.That(report.summaries.Count, Is.EqualTo(solvers.Count * scenarios.Count));
-            Assert.That(File.Exists(reportPath), Is.True, "Benchmark report file was not created.");
+            Assert.That(report.sampleDefinitions.Count, Is.EqualTo(expectedSampleCount));
+            Assert.That(report.stepSweepPoints.Count, Is.EqualTo(config.stepScaleSweep.Length));
+            Assert.That(report.stepPoints.Count, Is.EqualTo(expectedStepPointCount));
+            Assert.That(report.scorePoints.Count, Is.EqualTo(expectedScorePointCount));
+            Assert.That(report.bestScorePoints.Count, Is.EqualTo(solvers.Count));
 
-            for (int i = 0; i < report.summaries.Count; i++)
-            {
-                Assert.That(report.summaries[i].totalSamples, Is.EqualTo(config.samplesPerScenario));
-            }
+            Assert.That(File.Exists(Path.Combine(resultsDirectory, "IKBenchmarkExperimentPlan.txt")), Is.True);
+            Assert.That(File.Exists(Path.Combine(resultsDirectory, "IKBenchmarkScoreFormula.txt")), Is.True);
+            Assert.That(File.Exists(Path.Combine(resultsDirectory, "IKBenchmarkSummary.txt")), Is.True);
+            Assert.That(File.Exists(Path.Combine(resultsDirectory, "IKBenchmarkSamples.csv")), Is.True);
+            Assert.That(File.Exists(Path.Combine(resultsDirectory, "IKBenchmarkSampleResults.csv")), Is.True);
+            Assert.That(File.Exists(Path.Combine(resultsDirectory, "IKBenchmarkStepData.csv")), Is.True);
+            Assert.That(File.Exists(Path.Combine(resultsDirectory, "IKBenchmarkPlotReady.csv")), Is.True);
+            Assert.That(File.Exists(Path.Combine(resultsDirectory, "IKBenchmarkScoreCurve.csv")), Is.True);
+            Assert.That(File.Exists(Path.Combine(resultsDirectory, "IKBenchmarkBestScores.csv")), Is.True);
         }
     }
 }
